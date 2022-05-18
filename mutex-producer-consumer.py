@@ -15,15 +15,13 @@ class Producer(Thread):
         global UUID
         while True:
             MUTEX.acquire()
-            if BUFFER.full():
-                print("Buffer is full, producer is waiting")
-                MUTEX.release()
-            else:
+            while not BUFFER.full():
                 UUID += 1
                 BUFFER.put(UUID)
-                print("Producer", self.name, "produced:", UUID)
-                MUTEX.release()
-            time.sleep(1)
+                print("Producer {}: Produced {}".format(self.name, UUID))
+                time.sleep(0.1)
+            MUTEX.release()	# release the lock
+            time.sleep(0.5)
 
 class Consumer(Thread):
     def __init__(self, name):
@@ -38,14 +36,14 @@ class Consumer(Thread):
                 MUTEX.release()
                 time.sleep(1)
                 continue
-            print("Consumer", self.name, "Consumed:", BUFFER.get())
+            print("Consumer {} consumed: {}".format(self.name, BUFFER.get()))
             MUTEX.release()
             time.sleep(1)
 
-for i in range(20):
+for i in range(2):
     t = Producer(i)
     t.start()
 
-for i in range(2):
+for i in range(10):
     t = Consumer(i)
     t.start()
