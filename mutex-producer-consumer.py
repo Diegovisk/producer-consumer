@@ -6,6 +6,7 @@ UUID = 0
 BUFFER = queue.Queue(maxsize=10)
 MUTEX = Lock()
 
+
 class Producer(Thread):
     def __init__(self, name):
         Thread.__init__(self)
@@ -15,13 +16,16 @@ class Producer(Thread):
         global UUID
         while True:
             MUTEX.acquire()
-            while not BUFFER.full():
+            if BUFFER.full():
+                print("Buffer is full, producer is waiting")
+                MUTEX.release()
+            else:
                 UUID += 1
                 BUFFER.put(UUID)
-                print("Producer {}: Produced {}".format(self.name, UUID))
-                time.sleep(0.1)
-            MUTEX.release()	# release the lock
-            time.sleep(0.5)
+                print("Producer", self.name, "produced:", UUID)
+                MUTEX.release()
+            time.sleep(1)
+
 
 class Consumer(Thread):
     def __init__(self, name):
@@ -36,14 +40,15 @@ class Consumer(Thread):
                 MUTEX.release()
                 time.sleep(1)
                 continue
-            print("Consumer {} consumed: {}".format(self.name, BUFFER.get()))
+            print("Consumer", self.name, "Consumed:", BUFFER.get())
             MUTEX.release()
             time.sleep(1)
 
-for i in range(2):
+
+for i in range(4):
     t = Producer(i)
     t.start()
 
-for i in range(10):
+for i in range(6):
     t = Consumer(i)
     t.start()
